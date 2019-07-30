@@ -212,8 +212,10 @@ def computePatientAcc():
             	
     aurocScore = roc_auc_score(trueLabels, predictProbs)	
     predictVals = np.where(np.asarray(predictProbs)>0.5, 1, 0)	
-    p = precision_score(trueLabels, predictVals, average="macro")	
-    r = recall_score(trueLabels, predictVals, average="macro")	
+    sensitivity = recall_score(trueLabels, predictVals, average="binary")
+    tn, fp, fn, tp = confusion_matrix(trueLabels, predictVals).ravel()
+    specificity = tn/(tn+fp)
+
     confusion = confusion_matrix(trueLabels, predictVals)	
     	
     fpr, tpr, _ = roc_curve(trueLabels, predictVals)	
@@ -231,7 +233,7 @@ def computePatientAcc():
     #plt.legend(loc="lower right")	
     #plt.savefig(os.path.join(args.model_dir,"rocauc_val.png"))	
     print (confusion)
-    return (correct/total, aurocScore, p, r, 1.0) #confusion) #patient classification accuracy, roc-auc score, precision, recall, confusion matrix	
+    return (correct/total, aurocScore, sensitivity, specificity, 1.0) #confusion) #patient classification accuracy, roc-auc score, precision, recall, confusion matrix	
      	
 def evaluate(model, loss_fn, dataloader, metrics, params, test=False):	
     """Evaluate the model on `num_steps` batches.	
@@ -293,7 +295,7 @@ def evaluate(model, loss_fn, dataloader, metrics, params, test=False):
         metrics_mean['foot-aucroc'] = roc_auc_score(footAUCTrue, footAUCProbs)
     except:
         metrics_mean['foot-aucroc'] = 0
-    metrics_mean['patient-acc'], metrics_mean['aurocScore'], metrics_mean['precision'], metrics_mean['recall'], metrics_mean['confusion'] = computePatientAcc()	
+    metrics_mean['patient-acc'], metrics_mean['aurocScore'], metrics_mean['sensitivity'], metrics_mean['specificity'], metrics_mean['confusion'] = computePatientAcc()	
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())	
     logging.info("- Eval metrics : " + metrics_string)	
    	
